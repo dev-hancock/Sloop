@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  SONAR_PROJECT_KEY: 'dev-hancock_Sloop'
+  SONAR_ORGANIZATION: 'dev-hancock'
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+jobs:
+  build-test-analyze:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install Sonar
+        run: dotnet tool install --global dotnet-sonarscanner
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Begin Sonar
+        run: |
+          dotnet-sonarscanner begin \
+            /k:"${{ env.SONAR_PROJECT_KEY }}" \
+            /o:"${{ env.SONAR_ORGANIZATION }}" \
+            /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
+            /d:sonar.cs.opencover.reportsPaths=TestResults/**/coverage.opencover.xml
+
+      - name: Build
+        run: |
+          dotnet build \
+            --no-restore \
+            --configuration Release
+
+      - name: Test
+        run: |
+          dotnet test \
+            --no-build \
+            --configuration Release \
+            --settings tests/Sloop.Tests/coverlet.runsettings \
+            --collect:"XPlat Code Coverage" \
+            --results-directory TestResults \
+            /p:UseSourceLink=true
+
+      - name: End Sonar
+        run: dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
