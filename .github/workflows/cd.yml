@@ -1,4 +1,4 @@
-name: Publish to NuGet
+name: CD
 
 on:
   push:
@@ -10,6 +10,7 @@ env:
   NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
 
 permissions:
+  contents: read
   packages: write
 
 jobs:
@@ -34,27 +35,27 @@ jobs:
 
       - name: Build
         run: |
-            dotnet build \
-              --configuration Release \
-              --no-restore
+          dotnet build \
+            --configuration Release \
+            --no-restore
 
       - name: Test
         run: |
-            dotnet test \
-              --no-build \
-              --configuration Release
+          dotnet test \
+            --no-build \
+            --configuration Release
 
       - name: Pack
-        run: | 
-            dotnet pack \
-              --configuration Release \
-              --no-build \
-              --output ./nupkg \
-              /p:PackageVersion=${VERSION}
+        run: |
+          dotnet pack \
+            --configuration Release \
+            --no-build \
+            --output ./nupkg \
+            /p:Version=${{ env.VERSION }}
 
       - name: Push
         run: |
-            dotnet nuget push ./nupkg/*.nupkg \
-             --api-key ${{ env.NUGET_API_KEY }} \
-             --source https://api.nuget.org/v3/index.json \
-             --skip-duplicate
+          dotnet nuget push ./nupkg/*.nupkg \
+           --source https://api.nuget.org/v3/index.json \
+           --api-key ${{ env.NUGET_API_KEY }} \
+           --skip-duplicate

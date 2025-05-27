@@ -8,7 +8,6 @@
 
     <PropertyGroup>
         <PackageId>Sloop</PackageId>
-        <Version>1.0.1</Version>
         <Authors>Adam Hancock</Authors>
         <Company>Hancock Software Solutions Limited</Company>
         <Description>Distributed caching implementation using PostgreSQL and IDistributedCache.</Description>
