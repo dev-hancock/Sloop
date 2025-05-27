@@ -21,6 +21,7 @@ public class TryAcquireLockCommand : IDbCacheCommand<TryAcquireLockArgs, bool>
         await using var cmd = connection.CreateCommand();
 
         cmd.CommandText = "SELECT pg_try_advisory_lock(@id);";
+
         cmd.Parameters.AddWithValue("id", args.Id);
 
         var acquired = await cmd.ExecuteScalarAsync(token);
