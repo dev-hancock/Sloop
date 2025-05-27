@@ -5,7 +5,7 @@ namespace Sloop.Commands;
 
 public record CreateTableArgs;
 
-public class CreateTableCommand : IDbCacheCommand<CreateTableArgs>
+public class CreateTableCommand : IDbCacheCommand<CreateTableArgs, bool>
 {
     private readonly SloopOptions _options;
 
@@ -14,7 +14,7 @@ public class CreateTableCommand : IDbCacheCommand<CreateTableArgs>
         _options = options.Value;
     }
 
-    public async Task ExecuteAsync(NpgsqlConnection connection, CreateTableArgs _, CancellationToken token = default)
+    public async Task<bool> ExecuteAsync(NpgsqlConnection connection, CreateTableArgs _, CancellationToken token = default)
     {
         await using var cmd = connection.CreateCommand();
 
@@ -35,5 +35,7 @@ public class CreateTableCommand : IDbCacheCommand<CreateTableArgs>
              """;
 
         await cmd.ExecuteNonQueryAsync(token);
+
+        return true;
     }
 }

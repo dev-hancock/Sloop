@@ -1,7 +1,9 @@
 ﻿namespace Sloop.Tests.Integration;
 
 using System.Text;
+using Commands;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Npgsql;
 using Testcontainers.PostgreSql;
@@ -13,8 +15,6 @@ public class SloopCacheTests : IAsyncLifetime
     private IDbConnectionFactory _connection = null!;
 
     private IDbCacheOperations _operations = null!;
-
-    private IOptions<SloopOptions> _options = null!;
 
     private const string Schema = "public";
 
@@ -32,17 +32,21 @@ public class SloopCacheTests : IAsyncLifetime
 
         await _db.StartAsync();
 
-        _options = Options.Create(new SloopOptions
+        var services = new ServiceCollection();
+
+        services.AddCache(opt =>
         {
-            ConnectionString = _db.GetConnectionString(),
-            SchemaName = Schema,
-            TableName = Table,
-            DefaultExpiration = null
+            opt.ConnectionString = _db.GetConnectionString();
+            opt.SchemaName = Schema;
+            opt.TableName = Table;
+            opt.DefaultExpiration = null;
         });
+        
+        var provider = services.BuildServiceProvider();
+        
+        _operations = provider.GetRequiredService<IDbCacheOperations>();
 
-        _connection = new SloopConnectionFactory(_options);
-
-        _operations = new SloopOperations(_options, TimeProvider.System);
+        _connection = provider.GetRequiredService<IDbConnectionFactory>();
     }
 
     public async Task DisposeAsync()
@@ -86,12 +90,13 @@ public class SloopCacheTests : IAsyncLifetime
     }
 
     [Fact]
-    public void CreateTable_ShouldSucceed_AndTableShouldExist()
+    public async Task CreateTable_ShouldSucceed_AndTableShouldExist()
     {
-        using var connection = _connection.Create();
+        await using var connection = await _connection.Create();
 
-        using var command = connection.CreateCommand();
-        command.CommandText =
+        await using var cmd = connection.CreateCommand();
+        
+        cmd.CommandText =
             $"""
              SELECT EXISTS (
                  SELECT 1 FROM information_schema.tables
@@ -100,7 +105,7 @@ public class SloopCacheTests : IAsyncLifetime
              );
              """;
 
-        var exists = command.ExecuteScalar();
+        var exists = cmd.ExecuteScalar();
 
         Assert.True((bool)(exists ?? false));
     }
@@ -108,23 +113,23 @@ public class SloopCacheTests : IAsyncLifetime
     [Fact]
     public async Task GetAsync_ShouldRefreshSliding_WhenEligible()
     {
-        await using var connection = _connection.Create();
+        await using var connection = await _connection.Create();
 
         var key = Guid.NewGuid().ToString();
 
-        await _operations.SetAsync(connection,
-            key,
-            Serialize("refresh"),
-            new DistributedCacheEntryOptions
-            {
-                SlidingExpiration = TimeSpan.FromMilliseconds(500)
-            });
+        await _operations.SetItem.ExecuteAsync(connection,
+            new SetItemArgs(key,
+                Serialize("refresh"),
+                new DistributedCacheEntryOptions
+                {
+                    SlidingExpiration = TimeSpan.FromMilliseconds(500)
+                }));
 
         var before = GetMetadata(connection, key).Expiry;
 
         await Task.Delay(100);
 
-        var result = await _operations.GetAsync(connection, key);
+        var result = await _operations.GetItem.ExecuteAsync(connection, new GetItemArgs(key));
 
         Assert.NotNull(result);
 
@@ -136,21 +141,21 @@ public class SloopCacheTests : IAsyncLifetime
     [Fact]
     public async Task GetAsync_ShouldReturnValue_AfterSetAsync()
     {
-        await using var connection = _connection.Create();
+        await using var connection = await _connection.Create();
 
         var key = Guid.NewGuid().ToString();
 
         var value = Serialize("hello");
 
-        await _operations.SetAsync(connection,
-            key,
-            value,
-            new DistributedCacheEntryOptions
-            {
-                SlidingExpiration = TimeSpan.FromMinutes(1)
-            });
+        await _operations.SetItem.ExecuteAsync(connection,
+            new SetItemArgs(key,
+                value,
+                new DistributedCacheEntryOptions
+                {
+                    SlidingExpiration = TimeSpan.FromMinutes(1)
+                }));
 
-        var result = await _operations.GetAsync(connection, key);
+        var result = await _operations.GetItem.ExecuteAsync(connection, new GetItemArgs(key));
 
         Assert.NotNull(result);
         Assert.Equal("hello", Deserialize(result));

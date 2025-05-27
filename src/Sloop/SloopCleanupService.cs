@@ -10,19 +10,22 @@ using Microsoft.Extensions.Hosting;
 /// </summary>
 internal class SloopCleanupService : BackgroundService
 {
+    private readonly IDbConnectionFactory _connection;
+
     /// <summary>
     /// The interval between successive cleanup runs.
     /// </summary>
     private readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
 
-    private readonly SloopServices _services;
+    private readonly IDbCacheOperations _operations;
 
     /// <summary>
     /// Constructs a new instance of the <see cref="SloopCleanupService" />.
     /// </summary>
-    public SloopCleanupService(SloopServices services)
+    public SloopCleanupService(IDbConnectionFactory connection, IDbCacheOperations operations)
     {
-        _services = services;
+        _connection = connection;
+        _operations = operations;
     }
 
     /// <summary>
@@ -34,11 +37,11 @@ internal class SloopCleanupService : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            await using var connection = await _services.Connection.Create(stoppingToken);
+            await using var connection = await _connection.Create(stoppingToken);
 
-            if (await _services.Operations.TryAcquireLock.ExecuteAsync(connection, new TryAcquireLockArgs(42_000), stoppingToken))
+            if (await _operations.TryAcquireLock.ExecuteAsync(connection, new TryAcquireLockArgs(42_000), stoppingToken))
             {
-                await _services.Operations.PurgeExpiredItems.ExecuteAsync(connection, new PurgeExpiredItemsArgs(), stoppingToken);
+                await _operations.PurgeExpiredItems.ExecuteAsync(connection, new PurgeExpiredItemsArgs(), stoppingToken);
             }
 
             await Task.Delay(_interval, stoppingToken);

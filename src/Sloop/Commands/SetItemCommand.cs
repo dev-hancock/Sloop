@@ -6,7 +6,7 @@ namespace Sloop.Commands;
 
 public record SetItemArgs(string Key, byte[] Value, DistributedCacheEntryOptions? Options);
 
-public class SetItemCommand : IDbCacheCommand<SetItemArgs>
+public class SetItemCommand : IDbCacheCommand<SetItemArgs, bool>
 {
     private readonly TimeProvider _time;
     
@@ -17,31 +17,50 @@ public class SetItemCommand : IDbCacheCommand<SetItemArgs>
         _time = time;
         _options = options.Value;
     }
-    
-    public async Task ExecuteAsync(NpgsqlConnection connection, SetItemArgs args, CancellationToken token = default)
-    {
-        var options = args.Options ?? new DistributedCacheEntryOptions();
 
-        var absolute = options.AbsoluteExpiration;
+    private static DateTimeOffset? GetAbsoluteExpiration(DateTimeOffset now, DistributedCacheEntryOptions options)
+    {
+        if (options.AbsoluteExpiration.HasValue)
+        {
+            return options.AbsoluteExpiration;
+        }
 
         if (options.AbsoluteExpirationRelativeToNow.HasValue)
         {
-            absolute = _time.GetUtcNow().Add(options.AbsoluteExpirationRelativeToNow.Value);
+            return now.Add(options.AbsoluteExpirationRelativeToNow.Value);
         }
 
+        return null;
+    }
+
+    private static DateTimeOffset? CoerceExpiration(DateTimeOffset now, DateTimeOffset? absolute, TimeSpan? sliding)
+    {
+        if (!sliding.HasValue)
+        {
+            return absolute;
+        }
+
+        var expiration = now.Add(sliding.Value);
+
+        if (absolute.HasValue && expiration > absolute.Value)
+        {
+            return absolute;
+        }
+
+        return expiration; 
+    }
+    
+    public async Task<bool> ExecuteAsync(NpgsqlConnection connection, SetItemArgs args, CancellationToken token = default)
+    {
+        var options = args.Options ?? new DistributedCacheEntryOptions();
+        
+        var now = _time.GetUtcNow();
+        
+        var absolute = GetAbsoluteExpiration(now, options);
+        
         var sliding = options.SlidingExpiration ?? _options.DefaultExpiration;
 
-        var expiry = absolute;
-
-        if (sliding.HasValue)
-        {
-            expiry = _time.GetUtcNow().Add(sliding.Value);
-
-            if (expiry > absolute)
-            {
-                expiry = absolute;
-            }
-        }
+        var expiration = CoerceExpiration(now, absolute, sliding);
         
         await using var cmd = connection.CreateCommand();
 
@@ -58,10 +77,12 @@ public class SetItemCommand : IDbCacheCommand<SetItemArgs>
 
         cmd.Parameters.AddWithValue("key", args.Key);
         cmd.Parameters.AddWithValue("value", args.Value);
-        cmd.Parameters.AddWithValue("expires_at", expiry.HasValue ? expiry.Value.UtcDateTime : DBNull.Value);
+        cmd.Parameters.AddWithValue("expires_at", expiration.HasValue ? expiration.Value.UtcDateTime : DBNull.Value);
         cmd.Parameters.AddWithValue("sliding_interval", sliding.HasValue ? sliding.Value : DBNull.Value);
         cmd.Parameters.AddWithValue("absolute_expiry", absolute.HasValue ? absolute.Value.UtcDateTime : DBNull.Value);
         
-        await cmd.ExecuteNonQueryAsync(token);
+        var result = await cmd.ExecuteNonQueryAsync(token);
+
+        return result == 1;
     }
 }
