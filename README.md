@@ -1,10 +1,26 @@
-﻿[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=dev-hancock_Sloop&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=dev-hancock_Sloop)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=dev-hancock_Sloop&metric=coverage)](https://sonarcloud.io/summary/new_code?id=dev-hancock_Sloop)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=dev-hancock_Sloop&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=dev-hancock_Sloop)
-[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=dev-hancock_Sloop&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=dev-hancock_Sloop)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=dev-hancock_Sloop&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=dev-hancock_Sloop)
+﻿<p align="center">
+  <img src="icon.png" alt="Sloop logo" width="120" height="120" />
+</p>
 
-# ⚓ Sloop
+<h1 align="center">Sloop</h1>
+
+<p align="center">
+</p>
+
+<p align="center">
+  <a href="https://sonarcloud.io/summary/new_code?id=dev-hancock_Sloop">
+    <img src="https://sonarcloud.io/api/project_badges/measure?project=dev-hancock_Sloop&metric=sqale_rating" alt="Maintainability Rating" />
+  </a>
+  <a href="https://sonarcloud.io/summary/new_code?id=dev-hancock_Sloop">
+    <img src="https://sonarcloud.io/api/project_badges/measure?project=dev-hancock_Sloop&metric=coverage" alt="Code Coverage" />
+  </a>
+  <a href="https://sonarcloud.io/summary/new_code?id=dev-hancock_Sloop">
+    <img src="https://sonarcloud.io/api/project_badges/measure?project=dev-hancock_Sloop&metric=reliability_rating" alt="Reliability Rating" />
+  </a>
+  <a href="https://sonarcloud.io/summary/new_code?id=dev-hancock_Sloop">
+    <img src="https://sonarcloud.io/api/project_badges/measure?project=dev-hancock_Sloop&metric=security_rating" alt="Security Rating" />
+  </a>
+</p>
 
 **Sloop** is a lightweight, PostgreSQL-backed implementation of `IDistributedCache` for .NET applications. It provides durable, high-performance caching with support for sliding and absolute expiration. Designed for simplicity and resilience in distributed systems.
 
@@ -37,7 +53,8 @@ builder.Services.AddCache(options =>
     options.ConnectionString = builder.Configuration.GetConnectionString("Postgres")!;
     options.SchemaName = "public";
     options.TableName = "cache";
-    options.DefaultExpiration = TimeSpan.FromMinutes(30); // optional
+    options.DefaultExpiration = TimeSpan.FromMinutes(30);
+    options.CleanupInterval = TimeSpan.FromMinutes(1);
 });
 ```
 

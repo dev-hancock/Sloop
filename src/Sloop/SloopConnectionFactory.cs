@@ -1,74 +1,67 @@
 namespace Sloop;
 
+using Interfaces;
 using Microsoft.Extensions.Options;
 using Npgsql;
 
 /// <summary>
-/// Abstraction for creating new PostgreSQL connections.
-/// </summary>
-public interface IDbConnectionFactory
-{
-    /// <summary>
-    /// Creates and returns a new open <see cref="NpgsqlConnection" />.
-    /// </summary>
-    NpgsqlConnection Create();
-}
-
-/// <summary>
-/// Concrete implementation of <see cref="IDbConnectionFactory" /> that opens a connection and ensures the cache table
-/// exists.
+///     Provides a thread-safe implementation of <see cref="IDbConnectionFactory" /> that ensures
+///     the cache table schema is created only once per process.
 /// </summary>
 public class SloopConnectionFactory : IDbConnectionFactory
 {
-    private static readonly object Lock = new();
+    private readonly object _lock = new();
+
+    private readonly IDbCacheOperations _operations;
 
     private readonly SloopOptions _options;
 
     private volatile bool _created;
 
     /// <summary>
-    /// Constructs a new instance of <see cref="SloopConnectionFactory" />.
+    ///     Constructs a new instance of <see cref="SloopConnectionFactory" />.
     /// </summary>
-    public SloopConnectionFactory(IOptions<SloopOptions> options)
+    /// <param name="options">The configured Sloop options.</param>
+    /// <param name="operations">The cache operations used to initialize the table.</param>
+    public SloopConnectionFactory(IOptions<SloopOptions> options, IDbCacheOperations operations)
     {
+        _operations = operations;
         _options = options.Value;
     }
 
     /// <inheritdoc />
-    public NpgsqlConnection Create()
+    public async Task<NpgsqlConnection> Create(CancellationToken token = default)
     {
         var connection = new NpgsqlConnection(_options.ConnectionString);
 
-        connection.Open();
+        await connection.OpenAsync(token).ConfigureAwait(false);
 
-        EnsureTableCreated(connection);
+        await EnsureTableCreated(connection, token);
 
         return connection;
     }
 
     /// <summary>
-    /// Ensures the cache schema and table are created only once per process.
-    /// Thread-safe using double-checked locking.
+    ///     Ensures the cache schema and table are created only once per process.
+    ///     Thread-safe using double-checked locking.
     /// </summary>
-    private void EnsureTableCreated(NpgsqlConnection connection)
+    /// <param name="connection">The open PostgreSQL connection.</param>
+    /// <param name="token">A cancellation token.</param>
+    private async Task EnsureTableCreated(NpgsqlConnection connection, CancellationToken token)
     {
-        if (_created)
+        var create = false;
+
+        lock (_lock)
         {
-            return;
+            if (!_created)
+            {
+                _created = create = true;
+            }
         }
 
-        lock (Lock)
+        if (create)
         {
-            if (_created)
-            {
-                return;
-            }
-
-            using var cmd = SloopCommands.CreateTable(connection, _options.SchemaName, _options.TableName);
-
-            cmd.ExecuteNonQuery();
-
-            _created = true;
+            await _operations.CreateTable.ExecuteAsync(connection, null!, token);
         }
     }
 }
