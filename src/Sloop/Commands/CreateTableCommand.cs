@@ -1,19 +1,32 @@
+namespace Sloop.Commands;
+
+using Interfaces;
 using Microsoft.Extensions.Options;
 using Npgsql;
 
-namespace Sloop.Commands;
-
+/// <summary>
+///     Represents the input for the <see cref="CreateTableCommand" />.
+/// </summary>
 public record CreateTableArgs;
 
+/// <summary>
+///     Command to ensure the PostgreSQL cache schema and table exist.
+///     Executes DDL to create the schema/table if they are not present.
+/// </summary>
 public class CreateTableCommand : IDbCacheCommand<CreateTableArgs, bool>
 {
     private readonly SloopOptions _options;
 
-    private CreateTableCommand(IOptions<SloopOptions> options)
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="CreateTableCommand" /> class.
+    /// </summary>
+    /// <param name="options">The configured Sloop options.</param>
+    public CreateTableCommand(IOptions<SloopOptions> options)
     {
         _options = options.Value;
     }
 
+    /// <inheritdoc />
     public async Task<bool> ExecuteAsync(NpgsqlConnection connection, CreateTableArgs _, CancellationToken token = default)
     {
         await using var cmd = connection.CreateCommand();

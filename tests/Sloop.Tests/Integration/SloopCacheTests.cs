@@ -2,25 +2,25 @@
 
 using System.Text;
 using Commands;
+using Interfaces;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Npgsql;
 using Testcontainers.PostgreSql;
 
 public class SloopCacheTests : IAsyncLifetime
 {
-    private PostgreSqlContainer _db = null!;
-
-    private IDbConnectionFactory _connection = null!;
-
-    private IDbCacheOperations _operations = null!;
-
     private const string Schema = "public";
 
     private const string Table = "cache";
 
     private static readonly TimeSpan DateTimeTolerance = TimeSpan.FromSeconds(1);
+
+    private IDbConnectionFactory _connection = null!;
+
+    private PostgreSqlContainer _db = null!;
+
+    private IDbCacheOperations _operations = null!;
 
     public async Task InitializeAsync()
     {
@@ -41,9 +41,9 @@ public class SloopCacheTests : IAsyncLifetime
             opt.TableName = Table;
             opt.DefaultExpiration = null;
         });
-        
+
         var provider = services.BuildServiceProvider();
-        
+
         _operations = provider.GetRequiredService<IDbCacheOperations>();
 
         _connection = provider.GetRequiredService<IDbConnectionFactory>();
@@ -95,7 +95,7 @@ public class SloopCacheTests : IAsyncLifetime
         await using var connection = await _connection.Create();
 
         await using var cmd = connection.CreateCommand();
-        
+
         cmd.CommandText =
             $"""
              SELECT EXISTS (
@@ -164,23 +164,23 @@ public class SloopCacheTests : IAsyncLifetime
     [Fact]
     public async Task PurgeExpired_ShouldRemoveEntry_WhenExpiresAtIsPast()
     {
-        await using var connection = _connection.Create();
+        await using var connection = await _connection.Create();
 
         var key = Guid.NewGuid().ToString();
 
-        await _operations.SetAsync(connection,
-            key,
-            Serialize("expired"),
-            new DistributedCacheEntryOptions
-            {
-                SlidingExpiration = TimeSpan.FromMilliseconds(1)
-            });
+        await _operations.SetItem.ExecuteAsync(connection,
+            new SetItemArgs(key,
+                Serialize("expired"),
+                new DistributedCacheEntryOptions
+                {
+                    SlidingExpiration = TimeSpan.FromMilliseconds(1)
+                }));
 
         await Task.Delay(20);
 
-        await _operations.PurgeExpired(connection);
+        await _operations.PurgeExpiredItems.ExecuteAsync(connection, new PurgeExpiredItemsArgs());
 
-        var result = await _operations.GetAsync(connection, key);
+        var result = await _operations.GetItem.ExecuteAsync(connection, new GetItemArgs(key));
 
         Assert.Null(result);
     }
@@ -188,46 +188,47 @@ public class SloopCacheTests : IAsyncLifetime
     [Fact]
     public async Task RefreshAsync_ShouldExtendExpiration_WhenSlidingExpirationIsSet()
     {
-        await using var connection = _connection.Create();
+        await using var connection = await _connection.Create();
 
         var key = Guid.NewGuid().ToString();
 
-        await _operations.SetAsync(connection,
-            key,
-            Serialize("data"),
-            new DistributedCacheEntryOptions
-            {
-                SlidingExpiration = TimeSpan.FromSeconds(2)
-            });
+        await _operations.SetItem.ExecuteAsync(connection,
+            new SetItemArgs(key,
+                Serialize("data"),
+                new DistributedCacheEntryOptions
+                {
+                    SlidingExpiration = TimeSpan.FromSeconds(2)
+                }));
 
         await Task.Delay(1500);
 
-        var refreshed = await _operations.RefreshAsync(connection, key);
+        var refreshed = await _operations.RefreshItem.ExecuteAsync(connection, new RefreshItemArgs(key));
 
         Assert.True(refreshed);
 
-        var stillExists = await _operations.GetAsync(connection, key);
-        Assert.NotNull(stillExists);
+        var exists = await _operations.GetItem.ExecuteAsync(connection, new GetItemArgs(key));
+
+        Assert.NotNull(exists);
     }
 
     [Fact]
     public async Task RemoveAsync_ShouldDeleteEntry_WhenKeyExists()
     {
-        await using var connection = _connection.Create();
+        await using var connection = await _connection.Create();
 
         var key = Guid.NewGuid().ToString();
 
-        await _operations.SetAsync(connection,
-            key,
-            Serialize("data"),
-            new DistributedCacheEntryOptions
-            {
-                SlidingExpiration = TimeSpan.FromMinutes(1)
-            });
+        await _operations.SetItem.ExecuteAsync(connection,
+            new SetItemArgs(key,
+                Serialize("data"),
+                new DistributedCacheEntryOptions
+                {
+                    SlidingExpiration = TimeSpan.FromMinutes(1)
+                }));
 
-        await _operations.RemoveAsync(connection, key);
+        await _operations.RemoveItem.ExecuteAsync(connection, new RemoveItemArgs(key));
 
-        var result = await _operations.GetAsync(connection, key);
+        var result = await _operations.GetItem.ExecuteAsync(connection, new GetItemArgs(key));
 
         Assert.Null(result);
     }
@@ -235,19 +236,19 @@ public class SloopCacheTests : IAsyncLifetime
     [Fact]
     public async Task SetAsync_ShouldRespectAbsoluteExpiration_WhenSetExplicitly()
     {
-        await using var connection = _connection.Create();
+        await using var connection = await _connection.Create();
 
         var key = Guid.NewGuid().ToString();
 
         var absolute = DateTimeOffset.UtcNow.AddSeconds(1);
 
-        await _operations.SetAsync(connection,
-            key,
-            Serialize("absolute"),
-            new DistributedCacheEntryOptions
-            {
-                AbsoluteExpiration = absolute
-            });
+        await _operations.SetItem.ExecuteAsync(connection,
+            new SetItemArgs(key,
+                Serialize("absolute"),
+                new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpiration = absolute
+                }));
 
         var meta = GetMetadata(connection, key);
 
@@ -257,7 +258,7 @@ public class SloopCacheTests : IAsyncLifetime
 
         await Task.Delay(2000);
 
-        var result = await _operations.GetAsync(connection, key);
+        var result = await _operations.GetItem.ExecuteAsync(connection, new GetItemArgs(key));
 
         Assert.Null(result);
     }
@@ -265,17 +266,17 @@ public class SloopCacheTests : IAsyncLifetime
     [Fact]
     public async Task SetAsync_ShouldSetExpiresAt_FromSlidingInterval_WhenNoAbsoluteExpiration()
     {
-        await using var connection = _connection.Create();
+        await using var connection = await _connection.Create();
 
         var key = Guid.NewGuid().ToString();
 
-        await _operations.SetAsync(connection,
-            key,
-            Serialize("slide"),
-            new DistributedCacheEntryOptions
-            {
-                SlidingExpiration = TimeSpan.FromSeconds(5)
-            });
+        await _operations.SetItem.ExecuteAsync(connection,
+            new SetItemArgs(key,
+                Serialize("slide"),
+                new DistributedCacheEntryOptions
+                {
+                    SlidingExpiration = TimeSpan.FromSeconds(5)
+                }));
 
         var meta = GetMetadata(connection, key);
 
@@ -287,20 +288,20 @@ public class SloopCacheTests : IAsyncLifetime
     [Fact]
     public async Task SetAsync_ShouldSetExpiresAt_ToMinimum_WhenBothSlidingAndAbsoluteSet()
     {
-        await using var connection = _connection.Create();
+        await using var connection = await _connection.Create();
 
         var key = Guid.NewGuid().ToString();
 
         var absolute = DateTimeOffset.UtcNow.AddSeconds(5);
 
-        await _operations.SetAsync(connection,
-            key,
-            Serialize("combo"),
-            new DistributedCacheEntryOptions
-            {
-                AbsoluteExpiration = absolute,
-                SlidingExpiration = TimeSpan.FromSeconds(60)
-            });
+        await _operations.SetItem.ExecuteAsync(connection,
+            new SetItemArgs(key,
+                Serialize("combo"),
+                new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpiration = absolute,
+                    SlidingExpiration = TimeSpan.FromSeconds(60)
+                }));
 
         var meta = GetMetadata(connection, key);
 
@@ -312,14 +313,14 @@ public class SloopCacheTests : IAsyncLifetime
     [Fact]
     public async Task SetAsync_ShouldStorePermanentEntry_WhenNoExpirationProvided()
     {
-        await using var connection = _connection.Create();
+        await using var connection = await _connection.Create();
 
         var key = Guid.NewGuid().ToString();
 
-        await _operations.SetAsync(connection,
-            key,
-            Serialize("permanent"),
-            new DistributedCacheEntryOptions());
+        await _operations.SetItem.ExecuteAsync(connection,
+            new SetItemArgs(key,
+                Serialize("permanent"),
+                new DistributedCacheEntryOptions()));
 
         var meta = GetMetadata(connection, key);
 
@@ -327,7 +328,7 @@ public class SloopCacheTests : IAsyncLifetime
         Assert.Null(meta.Sliding);
         Assert.Null(meta.Absolute);
 
-        var result = await _operations.PurgeExpired(connection);
+        var result = await _operations.PurgeExpiredItems.ExecuteAsync(connection, new PurgeExpiredItemsArgs());
 
         Assert.Equal(0, result);
     }
@@ -335,17 +336,17 @@ public class SloopCacheTests : IAsyncLifetime
     [Fact]
     public async Task TryAcquireLock_ShouldSucceedFirstCall_ThenFail_WhenAlreadyHeld()
     {
-        await using var first = _connection.Create();
+        await using var first = await _connection.Create();
 
-        const int id = 42_000;
+        var id = new TryAcquireLockArgs(42_000);
 
-        var success = await _operations.TryAcquireLock(first, id);
+        var success = await _operations.TryAcquireLock.ExecuteAsync(first, id);
 
         Assert.True(success);
 
-        await using var second = _connection.Create();
+        await using var second = await _connection.Create();
 
-        var otherAttempt = await _operations.TryAcquireLock(second, id);
+        var otherAttempt = await _operations.TryAcquireLock.ExecuteAsync(second, id);
 
         Assert.False(otherAttempt);
     }

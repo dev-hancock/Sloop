@@ -1,7 +1,16 @@
-namespace Sloop
+namespace Sloop.Interfaces;
+
+/// <summary>
+///     Resolves concrete implementations of database cache commands.
+///     Useful for generic dispatch or composition.
+/// </summary>
+public interface IDbCommandResolver
 {
-    public interface IDbCommandResolver
-    {
-        IDbCacheCommand<TArgs, TResult> Resolve<TArgs, TResult>();
-    }
+    /// <summary>
+    ///     Resolves a command implementation for the given input and result types.
+    /// </summary>
+    /// <typeparam name="TArgs">The type of the command arguments.</typeparam>
+    /// <typeparam name="TResult">The type of the command result.</typeparam>
+    /// <returns>A concrete implementation of the database cache command.</returns>
+    IDbCacheCommand<TArgs, TResult> Resolve<TArgs, TResult>();
 }

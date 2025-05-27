@@ -1,15 +1,14 @@
-namespace Sloop
-{
-    using Npgsql;
+namespace Sloop.Interfaces;
 
+using Npgsql;
+
+/// <summary>
+///     Abstraction for creating new PostgreSQL connections.
+/// </summary>
+public interface IDbConnectionFactory
+{
     /// <summary>
-    /// Abstraction for creating new PostgreSQL connections.
+    ///     Creates and returns a new open <see cref="NpgsqlConnection" />.
     /// </summary>
-    public interface IDbConnectionFactory
-    {
-        /// <summary>
-        /// Creates and returns a new open <see cref="NpgsqlConnection" />.
-        /// </summary>
-        Task<NpgsqlConnection> Create(CancellationToken token = default);
-    }
+    Task<NpgsqlConnection> Create(CancellationToken token = default);
 }

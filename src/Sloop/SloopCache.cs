@@ -1,16 +1,28 @@
-﻿using Sloop.Commands;
+﻿namespace Sloop;
 
-namespace Sloop;
-
+using Commands;
+using Interfaces;
 using Microsoft.Extensions.Caching.Distributed;
 
+/// <summary>
+///     Implements <see cref="IDistributedCache" /> using PostgreSQL as the backing store.
+///     Executes structured commands for common cache operations.
+/// </summary>
 public class SloopCache : IDistributedCache
 {
-    private readonly SloopServices _services;
+    private readonly IDbConnectionFactory _connection;
 
-    public SloopCache(SloopServices services)
+    private readonly IDbCacheOperations _operations;
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="SloopCache" /> class.
+    /// </summary>
+    /// <param name="connection">Factory for creating PostgreSQL connections.</param>
+    /// <param name="operations">The set of cache command implementations.</param>
+    public SloopCache(IDbConnectionFactory connection, IDbCacheOperations operations)
     {
-        _services = services;
+        _connection = connection;
+        _operations = operations;
     }
 
     /// <inheritdoc />
@@ -22,9 +34,9 @@ public class SloopCache : IDistributedCache
     /// <inheritdoc />
     public async Task<byte[]?> GetAsync(string key, CancellationToken token = new())
     {
-        await using var connection = await _services.Connection.Create(token);
+        await using var connection = await _connection.Create(token);
 
-        return await _services.Operations.GetItem.ExecuteAsync(connection, new GetItemArgs(key), token);
+        return await _operations.GetItem.ExecuteAsync(connection, new GetItemArgs(key), token);
     }
 
     /// <inheritdoc />
@@ -36,9 +48,8 @@ public class SloopCache : IDistributedCache
     /// <inheritdoc />
     public async Task RefreshAsync(string key, CancellationToken token = new())
     {
-        await using var connection = await _services.Connection.Create(token);
-        
-        await _services.Operations.RefreshItem.ExecuteAsync(connection, new RefreshItemArgs(key), token);
+        await using var connection = await _connection.Create(token);
+        await _operations.RefreshItem.ExecuteAsync(connection, new RefreshItemArgs(key), token);
     }
 
     /// <inheritdoc />
@@ -50,9 +61,8 @@ public class SloopCache : IDistributedCache
     /// <inheritdoc />
     public async Task RemoveAsync(string key, CancellationToken token = new())
     {
-        await using var connection = await _services.Connection.Create(token);
-
-        await _services.Operations.RemoveItem.ExecuteAsync(connection, new RemoveItemArgs(key), token);
+        await using var connection = await _connection.Create(token);
+        await _operations.RemoveItem.ExecuteAsync(connection, new RemoveItemArgs(key), token);
     }
 
     /// <inheritdoc />
@@ -64,8 +74,7 @@ public class SloopCache : IDistributedCache
     /// <inheritdoc />
     public async Task SetAsync(string key, byte[] value, DistributedCacheEntryOptions options, CancellationToken token = new())
     {
-        await using var connection = await _services.Connection.Create(token);
-
-        await _services.Operations.SetItem.ExecuteAsync(connection, new SetItemArgs(key, value, options), token);
+        await using var connection = await _connection.Create(token);
+        await _operations.SetItem.ExecuteAsync(connection, new SetItemArgs(key, value, options), token);
     }
 }

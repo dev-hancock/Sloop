@@ -1,27 +1,11 @@
-using Microsoft.Extensions.DependencyInjection;
-using Sloop.Commands;
-
 namespace Sloop;
 
-public class SloopCommandResolver : IDbCommandResolver
-{
-    private readonly IServiceProvider _services;
-
-    public SloopCommandResolver(IServiceProvider services)
-    {
-        _services = services;
-    }
-
-    /// <inheritdoc />
-    public IDbCacheCommand<TArgs, TResult> Resolve<TArgs, TResult>()
-    {
-        return _services.GetRequiredService<IDbCacheCommand<TArgs, TResult>>();
-    }
-}
+using Commands;
+using Interfaces;
 
 /// <summary>
-/// Implements PostgreSQL-backed cache operations for distributed caching.
-/// Uses SQL command builders and expiration strategy to manage cache state.
+///     Implements PostgreSQL-backed cache operations for distributed caching.
+///     Uses SQL command builders and expiration strategy to manage cache state.
 /// </summary>
 public class SloopOperations : IDbCacheOperations
 {
