@@ -1,3 +1,5 @@
+using Sloop.Commands;
+
 namespace Sloop;
 
 /// <summary>

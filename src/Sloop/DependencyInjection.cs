@@ -12,6 +12,8 @@ public static class DependencyInjection
         services.AddHostedService<SloopCleanupService>();
 
         services.AddSingleton(TimeProvider.System);
+        
+        
 
         services.AddSingleton<IDbCacheOperations, SloopOperations>();
         services.AddSingleton<IDbConnectionFactory, SloopConnectionFactory>();

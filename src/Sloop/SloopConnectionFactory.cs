@@ -1,3 +1,5 @@
+using Sloop.Commands;
+
 namespace Sloop;
 
 using Microsoft.Extensions.Options;
@@ -11,7 +13,7 @@ public interface IDbConnectionFactory
     /// <summary>
     /// Creates and returns a new open <see cref="NpgsqlConnection" />.
     /// </summary>
-    NpgsqlConnection Create();
+    Task<NpgsqlConnection> Create(CancellationToken token = default);
 }
 
 /// <summary>
@@ -20,7 +22,9 @@ public interface IDbConnectionFactory
 /// </summary>
 public class SloopConnectionFactory : IDbConnectionFactory
 {
-    private static readonly object Lock = new();
+    private readonly IDbCacheOperations _operations;
+    
+    private readonly object _lock = new();
 
     private readonly SloopOptions _options;
 
@@ -29,19 +33,20 @@ public class SloopConnectionFactory : IDbConnectionFactory
     /// <summary>
     /// Constructs a new instance of <see cref="SloopConnectionFactory" />.
     /// </summary>
-    public SloopConnectionFactory(IOptions<SloopOptions> options)
+    public SloopConnectionFactory(IOptions<SloopOptions> options, IDbCacheOperations operations)
     {
+        _operations = operations;
         _options = options.Value;
     }
 
     /// <inheritdoc />
-    public NpgsqlConnection Create()
+    public async Task<NpgsqlConnection> Create(CancellationToken token = default)
     {
         var connection = new NpgsqlConnection(_options.ConnectionString);
 
-        connection.Open();
+        await connection.OpenAsync(token).ConfigureAwait(false);
 
-        EnsureTableCreated(connection);
+        await EnsureTableCreated(connection, token);
 
         return connection;
     }
@@ -50,25 +55,21 @@ public class SloopConnectionFactory : IDbConnectionFactory
     /// Ensures the cache schema and table are created only once per process.
     /// Thread-safe using double-checked locking.
     /// </summary>
-    private void EnsureTableCreated(NpgsqlConnection connection)
+    private async Task EnsureTableCreated(NpgsqlConnection connection, CancellationToken token)
     {
-        if (_created)
+        var create = false;
+
+        lock (_lock)
         {
-            return;
+            if (!_created)
+            {
+                _created = create = true;
+            }
         }
 
-        lock (Lock)
+        if (create)
         {
-            if (_created)
-            {
-                return;
-            }
-
-            using var cmd = SloopCommands.CreateTable(connection, _options.SchemaName, _options.TableName);
-
-            cmd.ExecuteNonQuery();
-
-            _created = true;
+            await _operations.CreateTable.ExecuteAsync(connection, null, token);
         }
     }
 }

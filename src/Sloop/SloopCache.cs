@@ -1,4 +1,6 @@
-﻿namespace Sloop;
+﻿using Sloop.Commands;
+
+namespace Sloop;
 
 using Microsoft.Extensions.Caching.Distributed;
 
@@ -20,9 +22,9 @@ public class SloopCache : IDistributedCache
     /// <inheritdoc />
     public async Task<byte[]?> GetAsync(string key, CancellationToken token = new())
     {
-        await using var connection = _services.Connection.Create();
+        await using var connection = await _services.Connection.Create(token);
 
-        return await _services.Operations.GetAsync(connection, key, token);
+        return await _services.Operations.GetItem.ExecuteAsync(connection, new GetItemArgs(key), token);
     }
 
     /// <inheritdoc />
@@ -34,9 +36,9 @@ public class SloopCache : IDistributedCache
     /// <inheritdoc />
     public async Task RefreshAsync(string key, CancellationToken token = new())
     {
-        await using var connection = _services.Connection.Create();
-
-        await _services.Operations.RefreshAsync(connection, key, token);
+        await using var connection = await _services.Connection.Create(token);
+        
+        await _services.Operations.RefreshItem.ExecuteAsync(connection, new RefreshItemArgs(key), token);
     }
 
     /// <inheritdoc />
@@ -48,9 +50,9 @@ public class SloopCache : IDistributedCache
     /// <inheritdoc />
     public async Task RemoveAsync(string key, CancellationToken token = new())
     {
-        await using var connection = _services.Connection.Create();
+        await using var connection = await _services.Connection.Create(token);
 
-        await _services.Operations.RemoveAsync(connection, key, token);
+        await _services.Operations.RemoveItem.ExecuteAsync(connection, new RemoveItemArgs(key), token);
     }
 
     /// <inheritdoc />
@@ -62,8 +64,8 @@ public class SloopCache : IDistributedCache
     /// <inheritdoc />
     public async Task SetAsync(string key, byte[] value, DistributedCacheEntryOptions options, CancellationToken token = new())
     {
-        await using var connection = _services.Connection.Create();
+        await using var connection = await _services.Connection.Create(token);
 
-        await _services.Operations.SetAsync(connection, key, value, options, token);
+        await _services.Operations.SetItem.ExecuteAsync(connection, new SetItemArgs(key, value, options), token);
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace Sloop;
+﻿using Sloop.Commands;
+
+namespace Sloop;
 
 using Microsoft.Extensions.Hosting;
 
@@ -32,11 +34,11 @@ internal class SloopCleanupService : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            await using var connection = _services.Connection.Create();
+            await using var connection = await _services.Connection.Create(stoppingToken);
 
-            if (await _services.Operations.TryAcquireLock(connection, 42_000, stoppingToken))
+            if (await _services.Operations.TryAcquireLock.ExecuteAsync(connection, new TryAcquireLockArgs(42_000), stoppingToken))
             {
-                await _services.Operations.PurgeExpired(connection, stoppingToken);
+                await _services.Operations.PurgeExpiredItems.ExecuteAsync(connection, new PurgeExpiredItemsArgs(), stoppingToken);
             }
 
             await Task.Delay(_interval, stoppingToken);
