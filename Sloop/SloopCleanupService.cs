@@ -37,7 +37,7 @@ internal class SloopCleanupService : BackgroundService
     }
 
     /// <summary>
-    ///     Runs the background cleanup loop. Every <see cref="_interval" />, it attempts to
+    ///     Runs the background cleanup loop. Every <see cref="SloopOptions.CleanupInterval" />, it attempts to
     ///     acquire a distributed advisory lock to ensure only one instance performs cleanup,
     ///     then purges expired cache entries in batches.
     /// </summary>

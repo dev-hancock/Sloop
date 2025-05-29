@@ -49,6 +49,7 @@ public class SloopCache : IDistributedCache
     public async Task RefreshAsync(string key, CancellationToken token = new())
     {
         await using var connection = await _connection.Create(token);
+        
         await _operations.RefreshItem.ExecuteAsync(connection, new RefreshItemArgs(key), token);
     }
 
@@ -62,6 +63,7 @@ public class SloopCache : IDistributedCache
     public async Task RemoveAsync(string key, CancellationToken token = new())
     {
         await using var connection = await _connection.Create(token);
+        
         await _operations.RemoveItem.ExecuteAsync(connection, new RemoveItemArgs(key), token);
     }
 
@@ -75,6 +77,7 @@ public class SloopCache : IDistributedCache
     public async Task SetAsync(string key, byte[] value, DistributedCacheEntryOptions options, CancellationToken token = new())
     {
         await using var connection = await _connection.Create(token);
+        
         await _operations.SetItem.ExecuteAsync(connection, new SetItemArgs(key, value, options), token);
     }
 }

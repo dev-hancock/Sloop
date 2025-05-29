@@ -12,22 +12,25 @@ public class SloopOptions
 
     /// <summary>
     ///     The default expiration interval for cache entries if none is explicitly specified.
+    ///     Default is 20 minutes.
     /// </summary>
     public TimeSpan? DefaultExpiration { get; set; } = TimeSpan.FromMinutes(20);
 
     /// <summary>
     ///     The schema name where the cache table will be created and queried.
+    ///     Default is "public"
     /// </summary>
     public string SchemaName { get; set; } = "public";
 
     /// <summary>
     ///     The name of the table used to store cache entries.
+    ///     Default is "cache"
     /// </summary>
     public string TableName { get; set; } = "cache";
 
     /// <summary>
     ///     The interval at which the background cleanup service purges expired cache entries.
-    ///     If null, defaults to 5 minutes.
+    ///     Defaults to 5 minutes.
     /// </summary>
     public TimeSpan CleanupInterval { get; set; } = TimeSpan.FromMinutes(5);
 }

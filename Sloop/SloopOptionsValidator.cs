@@ -4,7 +4,6 @@ using Microsoft.Extensions.Options;
 
 /// <summary>
 ///     Validates <see cref="SloopOptions" /> and throws exceptions on failure.
-///     Suitable for small libraries where early failure is preferred.
 /// </summary>
 internal class SloopOptionsValidator : IConfigureOptions<SloopOptions>
 {
