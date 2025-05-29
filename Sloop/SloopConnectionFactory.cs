@@ -32,7 +32,7 @@ public class SloopConnectionFactory : IDbConnectionFactory
     /// <inheritdoc />
     public async Task<NpgsqlConnection> Create(CancellationToken token = default)
     {
-        var connection = new NpgsqlConnection(_options.ConnectionString);
+        var connection = _options.ConnectionFactory(_options.ConnectionString);
 
         await connection.OpenAsync(token).ConfigureAwait(false);
 
