@@ -1,30 +1,20 @@
-﻿<p align="center">
-  <img src="icon.png" alt="Sloop logo" width="120" height="120" />
-</p>
+﻿# Sloop
 
-<h1 align="center">Sloop</h1>
 
-<p align="center">
-</p>
+---
 
-<p align="center">
-  <a href="https://sonarcloud.io/summary/new_code?id=dev-hancock_Sloop">
-    <img src="https://sonarcloud.io/api/project_badges/measure?project=dev-hancock_Sloop&metric=sqale_rating" alt="Maintainability Rating" />
-  </a>
-  <a href="https://sonarcloud.io/summary/new_code?id=dev-hancock_Sloop">
-    <img src="https://sonarcloud.io/api/project_badges/measure?project=dev-hancock_Sloop&metric=coverage" alt="Code Coverage" />
-  </a>
-  <a href="https://sonarcloud.io/summary/new_code?id=dev-hancock_Sloop">
-    <img src="https://sonarcloud.io/api/project_badges/measure?project=dev-hancock_Sloop&metric=reliability_rating" alt="Reliability Rating" />
-  </a>
-  <a href="https://sonarcloud.io/summary/new_code?id=dev-hancock_Sloop">
-    <img src="https://sonarcloud.io/api/project_badges/measure?project=dev-hancock_Sloop&metric=security_rating" alt="Security Rating" />
-  </a>
-</p>
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=dev-hancock_Sloop&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=dev-hancock_Sloop)
+[![Code Coverage](https://sonarcloud.io/api/project_badges/measure?project=dev-hancock_Sloop&metric=coverage)](https://sonarcloud.io/summary/new_code?id=dev-hancock_Sloop)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=dev-hancock_Sloop&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=dev-hancock_Sloop)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=dev-hancock_Sloop&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=dev-hancock_Sloop)
+
+![Sloop logo](icon.png)
 
 **Sloop** is a lightweight, PostgreSQL-backed implementation of `IDistributedCache` for .NET applications. It provides durable, high-performance caching with support for sliding and absolute expiration. Designed for simplicity and resilience in distributed systems.
 
 ## ✨ Features
+
+---
 
 - ⚡ Distributed key-value store backed by PostgreSQL
 - 🕓 Support for sliding and absolute expiration
@@ -37,6 +27,8 @@
 
 ## 📦 Installation
 
+---
+
 ```bash
 dotnet add package Sloop
 ````
@@ -44,6 +36,8 @@ dotnet add package Sloop
 > Requires **.NET 8.0 SDK or later**
 
 ## 🚀 Quick Start
+
+---
 
 ### Register with Dependency Injection
 
@@ -58,7 +52,7 @@ builder.Services.AddCache(options =>
 });
 ```
 
-### Use the `IDistributedCache`
+### Use `IDistributedCache`
 
 ```csharp
 public class MyService
@@ -90,6 +84,8 @@ public class MyService
 
 ## 🧪 Testing
 
+---
+
 Tests are executed against disposable PostgreSQL containers via [Testcontainers](https://github.com/testcontainers/testcontainers-dotnet):
 
 ```bash
@@ -98,9 +94,13 @@ dotnet test
 
 ## 🤝 Contributing
 
+--- 
+
 Contributions are welcome! Please follow standard C# coding guidelines and include tests with pull requests.
 
 ## 📄 License
+
+--- 
 
 Licensed under the [MIT License](LICENSE).
 
