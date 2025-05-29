@@ -5,8 +5,7 @@
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=dev-hancock_Sloop&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=dev-hancock_Sloop)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=dev-hancock_Sloop&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=dev-hancock_Sloop)
 
-![Sloop logo](![Sloop logo](https://raw.githubusercontent.com/dev-hancock/Sloop/main/icon.png)
-)
+![Sloop logo](https://raw.githubusercontent.com/dev-hancock/Sloop/main/icon.png)
 
 **Sloop** is a lightweight, PostgreSQL-backed implementation of `IDistributedCache` for .NET applications. It provides
 durable, high-performance caching with support for sliding and absolute expiration. Designed for simplicity and
