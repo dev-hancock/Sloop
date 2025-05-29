@@ -1,8 +1,6 @@
 ﻿# Sloop
 
 
----
-
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=dev-hancock_Sloop&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=dev-hancock_Sloop)
 [![Code Coverage](https://sonarcloud.io/api/project_badges/measure?project=dev-hancock_Sloop&metric=coverage)](https://sonarcloud.io/summary/new_code?id=dev-hancock_Sloop)
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=dev-hancock_Sloop&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=dev-hancock_Sloop)
@@ -13,8 +11,6 @@
 **Sloop** is a lightweight, PostgreSQL-backed implementation of `IDistributedCache` for .NET applications. It provides durable, high-performance caching with support for sliding and absolute expiration. Designed for simplicity and resilience in distributed systems.
 
 ## ✨ Features
-
----
 
 - ⚡ Distributed key-value store backed by PostgreSQL
 - 🕓 Support for sliding and absolute expiration
@@ -27,8 +23,6 @@
 
 ## 📦 Installation
 
----
-
 ```bash
 dotnet add package Sloop
 ````
@@ -36,8 +30,6 @@ dotnet add package Sloop
 > Requires **.NET 8.0 SDK or later**
 
 ## 🚀 Quick Start
-
----
 
 ### Register with Dependency Injection
 
@@ -84,8 +76,6 @@ public class MyService
 
 ## 🧪 Testing
 
----
-
 Tests are executed against disposable PostgreSQL containers via [Testcontainers](https://github.com/testcontainers/testcontainers-dotnet):
 
 ```bash
@@ -94,13 +84,9 @@ dotnet test
 
 ## 🤝 Contributing
 
---- 
-
 Contributions are welcome! Please follow standard C# coding guidelines and include tests with pull requests.
 
 ## 📄 License
-
---- 
 
 Licensed under the [MIT License](LICENSE).
 
