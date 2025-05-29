@@ -17,8 +17,8 @@
         <PackageProjectUrl>https://github.com/dev-hancock/Sloop</PackageProjectUrl>
         <IncludeSymbols>true</IncludeSymbols>
         <IncludeSource>true</IncludeSource>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageIcon>icon.png</PackageIcon>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
     <ItemGroup>
@@ -40,7 +40,7 @@
         <None Include="..\icon.png" Pack="true" PackagePath="icon.png">
             <Link>icon.png</Link>
         </None>
-        <None Include="..\README.md" Pack="true" PackagePath="icon.png">
+        <None Include="..\README.md" Pack="true" PackagePath="README.md">
             <Link>README.md</Link>
         </None>
     </ItemGroup>
