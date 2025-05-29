@@ -27,11 +27,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Sloop\Sloop.csproj"/>
+        <Using Include="Xunit"/>
     </ItemGroup>
 
     <ItemGroup>
-        <Using Include="Xunit"/>
+      <ProjectReference Include="..\Sloop\Sloop.csproj" />
     </ItemGroup>
 
 </Project>

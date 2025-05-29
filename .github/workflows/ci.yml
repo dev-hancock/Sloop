@@ -50,7 +50,7 @@ jobs:
           dotnet test \
             --no-build \
             --configuration Release \
-            --settings tests/Sloop.Tests/coverlet.runsettings \
+            --settings Sloop.Tests/coverlet.runsettings \
             --collect:"XPlat Code Coverage" \
             --results-directory TestResults \
             /p:UseSourceLink=true

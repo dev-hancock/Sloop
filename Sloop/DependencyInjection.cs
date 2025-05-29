@@ -12,15 +12,6 @@ using Microsoft.Extensions.Options;
 public static class DependencyInjection
 {
     /// <summary>
-    ///     Validates the <see cref="SloopOptions" /> before registration.
-    /// </summary>
-    /// <param name="options">The configured options to validate.</param>
-    private static void ValidateOptions(SloopOptions options)
-    {
-        // Reserved for future validation rules.
-    }
-
-    /// <summary>
     ///     Adds Sloop's PostgreSQL-based <see cref="IDistributedCache" /> implementation and related services.
     /// </summary>
     /// <param name="services">The service collection to add to.</param>
