@@ -1,6 +1,5 @@
 ﻿# Sloop
 
-
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=dev-hancock_Sloop&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=dev-hancock_Sloop)
 [![Code Coverage](https://sonarcloud.io/api/project_badges/measure?project=dev-hancock_Sloop&metric=coverage)](https://sonarcloud.io/summary/new_code?id=dev-hancock_Sloop)
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=dev-hancock_Sloop&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=dev-hancock_Sloop)
@@ -8,7 +7,9 @@
 
 ![Sloop logo](icon.png)
 
-**Sloop** is a lightweight, PostgreSQL-backed implementation of `IDistributedCache` for .NET applications. It provides durable, high-performance caching with support for sliding and absolute expiration. Designed for simplicity and resilience in distributed systems.
+**Sloop** is a lightweight, PostgreSQL-backed implementation of `IDistributedCache` for .NET applications. It provides
+durable, high-performance caching with support for sliding and absolute expiration. Designed for simplicity and
+resilience in distributed systems.
 
 ## ✨ Features
 
@@ -76,11 +77,33 @@ public class MyService
 
 ## 🧪 Testing
 
-Tests are executed against disposable PostgreSQL containers via [Testcontainers](https://github.com/testcontainers/testcontainers-dotnet):
+Tests are executed against disposable PostgreSQL containers
+via [Testcontainers](https://github.com/testcontainers/testcontainers-dotnet):
 
 ```bash
 dotnet test
 ```
+
+## 🏎 Benchmark Results
+
+Tested on: **Intel i5-14600K, Arch Linux, .NET 8.0**
+
+| Method              | Parallelism | Mean       | Allocated |
+|---------------------|-------------|------------|-----------|
+| `SetAsync`          | 1           | 60.05 µs   | 5.81 KB   |
+| `GetAsync`          | 1           | 73.15 µs   | 3.76 KB   |
+| `SetAsync_Parallel` | 1           | 60.00 µs   | 6.01 KB   |
+| `GetAsync_Parallel` | 1           | 66.78 µs   | 4.14 KB   |
+| `SetAsync`          | 10          | 60.10 µs   | 5.81 KB   |
+| `GetAsync`          | 10          | 64.30 µs   | 3.76 KB   |
+| `SetAsync_Parallel` | 10          | 580.55 µs  | 56.08 KB  |
+| `GetAsync_Parallel` | 10          | 840.78 µs  | 36.81 KB  |
+| `SetAsync`          | 50          | 61.44 µs   | 5.81 KB   |
+| `GetAsync`          | 50          | 64.80 µs   | 3.76 KB   |
+| `SetAsync_Parallel` | 50          | 872.56 µs  | 278.38 KB |
+| `GetAsync_Parallel` | 50          | 2029.80 µs | 181.87 KB |
+
+> Benchmarks run using [BenchmarkDotNet](https://benchmarkdotnet.org) on .NET 8.0 with Testcontainers for PostgreSQL.
 
 ## 🤝 Contributing
 
@@ -89,5 +112,3 @@ Contributions are welcome! Please follow standard C# coding guidelines and inclu
 ## 📄 License
 
 Licensed under the [MIT License](LICENSE).
-
-
