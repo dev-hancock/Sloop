@@ -103,4 +103,22 @@ public class SloopOptionsValidatorTests
 
         Assert.Null(exception);
     }
+
+    [Fact]
+    public void Configure_ShouldThrow_WhenConnectionFactoryIsNull()
+    {
+        var options = new SloopOptions
+        {
+            ConnectionString = "Host=localhost;",
+            SchemaName = "public",
+            TableName = "cache",
+            DefaultExpiration = TimeSpan.FromMinutes(5),
+            CleanupInterval = TimeSpan.FromMinutes(5),
+            ConnectionFactory = null!
+        };
+
+        var ex = Assert.Throws<OptionsValidationException>(() => _validator.Configure(options));
+
+        Assert.Contains("ConnectionFactory must not be null.", ex.Failures);
+    }
 }

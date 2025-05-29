@@ -59,5 +59,15 @@ internal class SloopOptionsValidator : IConfigureOptions<SloopOptions>
                     "CleanupInterval must be a positive TimeSpan if specified."
                 });
         }
+
+        if (options.ConnectionFactory is null)
+        {
+            throw new OptionsValidationException(nameof(SloopOptions),
+                typeof(SloopOptions),
+                new[]
+                {
+                    "ConnectionFactory must not be null."
+                });
+        }
     }
 }
