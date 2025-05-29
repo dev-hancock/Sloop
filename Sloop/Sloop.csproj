@@ -35,15 +35,13 @@
             <_Parameter1>Sloop.Tests</_Parameter1>
         </AssemblyAttribute>
     </ItemGroup>
-    
+
     <ItemGroup>
-        <None Include="..\icon.png">
+        <None Include="..\icon.png" Pack="true" PackagePath="icon.png">
             <Link>icon.png</Link>
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Include="..\README.md">
+        <None Include="..\README.md" Pack="true" PackagePath="icon.png">
             <Link>README.md</Link>
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
 
