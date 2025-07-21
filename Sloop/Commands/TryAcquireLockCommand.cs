@@ -1,6 +1,6 @@
 namespace Sloop.Commands;
 
-using Interfaces;
+using Abstractions;
 using Npgsql;
 
 /// <summary>

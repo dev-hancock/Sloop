@@ -1,6 +1,7 @@
 namespace Sloop.Commands;
 
-using Interfaces;
+using Abstractions;
+using Core;
 using Microsoft.Extensions.Options;
 using Npgsql;
 
@@ -37,9 +38,9 @@ public class PurgeExpiredItemsCommand : IDbCacheCommand<PurgeExpiredItemsArgs, l
 
             cmd.CommandText =
                 $"""
-                 DELETE FROM "{_options.SchemaName}"."{_options.TableName}"
+                 DELETE FROM {_options.GetQualifiedTableName()}
                  WHERE ctid IN (
-                     SELECT ctid FROM "{_options.SchemaName}"."{_options.TableName}"
+                     SELECT ctid FROM {_options.GetQualifiedTableName()}
                      WHERE expires_at <= now()
                      LIMIT {args.Limit}
                  );

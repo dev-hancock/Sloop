@@ -42,6 +42,7 @@ builder.Services.AddCache(options =>
     options.TableName = "cache";
     options.DefaultExpiration = TimeSpan.FromMinutes(30);
     options.CleanupInterval = TimeSpan.FromMinutes(1);
+    options.ConnectionFactory = x => new NpgsqlConnection(x);
 });
 ```
 
