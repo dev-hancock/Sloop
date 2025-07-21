@@ -1,4 +1,4 @@
-namespace Sloop.Interfaces;
+namespace Sloop.Abstractions;
 
 using Commands;
 
@@ -8,9 +8,6 @@ using Commands;
 /// </summary>
 public interface IDbCacheOperations
 {
-    /// <summary>Gets the command for creating the cache table schema.</summary>
-    IDbCacheCommand<CreateTableArgs, bool> CreateTable { get; }
-
     /// <summary>Gets the command for retrieving a cached item.</summary>
     IDbCacheCommand<GetItemArgs, byte[]?> GetItem { get; }
 

@@ -15,7 +15,6 @@ permissions:
 
 jobs:
   publish:
-    name: Publish NuGet Package
     runs-on: ubuntu-latest
 
     steps:
@@ -41,13 +40,13 @@ jobs:
 
       - name: Test
         run: |
-          dotnet test \
+          dotnet test Sloop.Tests \
             --no-build \
             --configuration Release
 
       - name: Pack
         run: |
-          dotnet pack \
+          dotnet pack Sloop \
             --configuration Release \
             --no-build \
             --output ./nupkg \

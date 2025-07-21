@@ -1,4 +1,4 @@
-namespace Sloop.Interfaces;
+namespace Sloop.Abstractions;
 
 using Npgsql;
 
@@ -14,7 +14,7 @@ public interface IDbCacheCommand<in TIn, TOut>
     /// </summary>
     /// <param name="connection">An open PostgreSQL connection.</param>
     /// <param name="args">The input arguments for the command.</param>
-    /// <param name="token">Optional cancellation token.</param>
+    /// <param name="ct">Optional cancellation token.</param>
     /// <returns>The result of the command execution.</returns>
-    Task<TOut> ExecuteAsync(NpgsqlConnection connection, TIn args, CancellationToken token = default);
+    Task<TOut> ExecuteAsync(NpgsqlConnection connection, TIn args, CancellationToken ct = default);
 }

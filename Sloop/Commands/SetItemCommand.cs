@@ -1,6 +1,7 @@
 namespace Sloop.Commands;
 
-using Interfaces;
+using Abstractions;
+using Core;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 using Npgsql;
@@ -43,7 +44,7 @@ public class SetItemCommand : IDbCacheCommand<SetItemArgs, bool>
 
         var absolute = GetAbsoluteExpiration(now, options);
 
-        var sliding = options.SlidingExpiration ?? _options.DefaultExpiration;
+        var sliding = options.SlidingExpiration ?? _options.DefaultSlidingExpiration;
 
         var expiration = CoerceExpiration(now, absolute, sliding);
 
@@ -51,7 +52,7 @@ public class SetItemCommand : IDbCacheCommand<SetItemArgs, bool>
 
         cmd.CommandText =
             $"""
-             INSERT INTO "{_options.SchemaName}"."{_options.TableName}" (key, value, expires_at, sliding_interval, absolute_expiry)
+             INSERT INTO {_options.GetQualifiedTableName()} (key, value, expires_at, sliding_interval, absolute_expiry)
              VALUES (@key, @value, @expires_at, @sliding_interval, @absolute_expiry)
              ON CONFLICT (key) DO UPDATE 
              SET value = @value,
@@ -71,7 +72,7 @@ public class SetItemCommand : IDbCacheCommand<SetItemArgs, bool>
         return result == 1;
     }
 
-    private static DateTimeOffset? GetAbsoluteExpiration(DateTimeOffset now, DistributedCacheEntryOptions options)
+    private DateTimeOffset? GetAbsoluteExpiration(DateTimeOffset now, DistributedCacheEntryOptions options)
     {
         if (options.AbsoluteExpiration.HasValue)
         {
@@ -83,10 +84,15 @@ public class SetItemCommand : IDbCacheCommand<SetItemArgs, bool>
             return now.Add(options.AbsoluteExpirationRelativeToNow.Value);
         }
 
+        if (_options.DefaultSlidingExpiration.HasValue)
+        {
+            return now.Add(_options.DefaultSlidingExpiration.Value);
+        }
+
         return null;
     }
 
-    private static DateTimeOffset? CoerceExpiration(DateTimeOffset now, DateTimeOffset? absolute, TimeSpan? sliding)
+    private DateTimeOffset? CoerceExpiration(DateTimeOffset now, DateTimeOffset? absolute, TimeSpan? sliding)
     {
         if (!sliding.HasValue)
         {
@@ -95,6 +101,11 @@ public class SetItemCommand : IDbCacheCommand<SetItemArgs, bool>
 
         var expiration = now.Add(sliding.Value);
 
-        return absolute.HasValue && expiration > absolute.Value ? absolute : expiration;
+        if (expiration > absolute)
+        {
+            return absolute;
+        }
+
+        return expiration;
     }
 }

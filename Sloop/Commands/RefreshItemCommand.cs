@@ -1,6 +1,7 @@
 namespace Sloop.Commands;
 
-using Interfaces;
+using Abstractions;
+using Core;
 using Microsoft.Extensions.Options;
 using Npgsql;
 
@@ -33,7 +34,7 @@ public class RefreshItemCommand : IDbCacheCommand<RefreshItemArgs, bool>
 
         cmd.CommandText =
             $"""
-             UPDATE "{_options.SchemaName}"."{_options.TableName}"
+             UPDATE {_options.GetQualifiedTableName()}
              SET expires_at = LEAST(now() + sliding_interval, absolute_expiry)
              WHERE key = @key AND sliding_interval IS NOT NULL;
              """;

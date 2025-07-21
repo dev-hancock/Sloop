@@ -1,6 +1,7 @@
 namespace Sloop.Commands;
 
-using Interfaces;
+using Abstractions;
+using Core;
 using Microsoft.Extensions.Options;
 using Npgsql;
 
@@ -33,7 +34,7 @@ public class RemoveItemCommand : IDbCacheCommand<RemoveItemArgs, bool>
 
         cmd.CommandText =
             $"""
-             DELETE FROM "{_options.SchemaName}"."{_options.TableName}"
+             DELETE FROM {_options.GetQualifiedTableName()}
              WHERE key = @key;
              """;
 

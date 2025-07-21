@@ -1,8 +1,9 @@
 ﻿namespace Sloop.Tests.Integration;
 
 using System.Text;
+using Abstractions;
 using Commands;
-using Interfaces;
+using Extensions;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
@@ -17,6 +18,8 @@ public class SloopCacheTests : IAsyncLifetime
     private static readonly TimeSpan DateTimeTolerance = TimeSpan.FromSeconds(1);
 
     private IDbConnectionFactory _connection = null!;
+
+    private IDbCacheContext _context = null!;
 
     private PostgreSqlContainer _db = null!;
 
@@ -36,10 +39,11 @@ public class SloopCacheTests : IAsyncLifetime
 
         services.AddCache(opt =>
         {
-            opt.ConnectionString = _db.GetConnectionString();
+            opt.UseConnectionString(_db.GetConnectionString());
             opt.SchemaName = Schema;
             opt.TableName = Table;
-            opt.DefaultExpiration = null;
+            opt.DefaultSlidingExpiration = null;
+            opt.CreateInfrastructure = true;
         });
 
         var provider = services.BuildServiceProvider();
@@ -47,6 +51,10 @@ public class SloopCacheTests : IAsyncLifetime
         _operations = provider.GetRequiredService<IDbCacheOperations>();
 
         _connection = provider.GetRequiredService<IDbConnectionFactory>();
+
+        _context = provider.GetRequiredService<IDbCacheContext>();
+
+        await _context.MigrateAsync();
     }
 
     public async Task DisposeAsync()

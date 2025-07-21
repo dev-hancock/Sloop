@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.0] - 2025-07-21
+
+### Added
+
+- `IDbCacheMigrator` service and ability to run migrations manually via `IDbCacheContext.MigrateAsync`
+- `SloopOptions.UseConnectionString(...)` and `UseDataSource(...)` methods to configure and consume an
+  `NpgsqlDataSource`
+
+### Changed
+
+- Simplified schema qualification logic in `SloopOptions.GetQualifiedTableName()` now consistently returns a
+  fully-qualified, quoted identifier
+
+### Fixed
+
+- Switched options validation to use `.Validate(x => x.Validate())` in DI for immediate startup-time checks
+
+---
+
 ## [1.0.3] - 2025-05-29
 
 ### Fixed

@@ -1,10 +1,10 @@
-namespace Sloop.Interfaces;
+namespace Sloop.Abstractions;
 
 /// <summary>
 ///     Resolves concrete implementations of database cache commands.
 ///     Useful for generic dispatch or composition.
 /// </summary>
-public interface IDbCommandResolver
+public interface IDbCommandFactory
 {
     /// <summary>
     ///     Resolves a command implementation for the given input and result types.

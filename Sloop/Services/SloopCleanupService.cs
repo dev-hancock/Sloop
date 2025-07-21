@@ -1,7 +1,8 @@
-﻿namespace Sloop;
+﻿namespace Sloop.Services;
 
+using Abstractions;
 using Commands;
-using Interfaces;
+using Core;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
@@ -36,12 +37,7 @@ internal class SloopCleanupService : BackgroundService
         _operations = operations;
     }
 
-    /// <summary>
-    ///     Runs the background cleanup loop. Every <see cref="SloopOptions.CleanupInterval" />, it attempts to
-    ///     acquire a distributed advisory lock to ensure only one instance performs cleanup,
-    ///     then purges expired cache entries in batches.
-    /// </summary>
-    /// <param name="stoppingToken">A cancellation token to stop the background process.</param>
+    /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)

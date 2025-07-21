@@ -1,6 +1,7 @@
 namespace Sloop.Benchmarks;
 
 using BenchmarkDotNet.Attributes;
+using Extensions;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.PostgreSql;
@@ -33,13 +34,7 @@ public class SloopBenchmark : IAsyncDisposable
 
         var services = new ServiceCollection();
 
-        services.AddCache(opt =>
-        {
-            opt.ConnectionString = _db.GetConnectionString();
-            opt.SchemaName = "public";
-            opt.TableName = "cache";
-            opt.CleanupInterval = TimeSpan.FromMinutes(60);
-        });
+        services.AddCache(opt => { opt.UseConnectionString(_db.GetConnectionString()); });
 
         var provider = services.BuildServiceProvider();
 

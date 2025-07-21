@@ -37,11 +37,13 @@ dotnet add package Sloop
 ```csharp
 builder.Services.AddCache(options =>
 {
-    options.ConnectionString = builder.Configuration.GetConnectionString("Postgres")!;
+    options.UseConnectionString(builder.Configuration.GetConnectionString("Cache")!);
     options.SchemaName = "public";
     options.TableName = "cache";
-    options.DefaultExpiration = TimeSpan.FromMinutes(30);
+    options.DefaultSlidingExpiration = TimeSpan.FromMinutes(5);
+    options.DefaultAbsoluteExpiration = TimeSpan.FromMinutes(30);
     options.CleanupInterval = TimeSpan.FromMinutes(1);
+    options.CreateInfrastructure = true;
 });
 ```
 

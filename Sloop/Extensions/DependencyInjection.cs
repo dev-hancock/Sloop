@@ -1,10 +1,12 @@
-﻿namespace Sloop;
+﻿namespace Sloop.Extensions;
 
+using Abstractions;
 using Commands;
-using Interfaces;
+using Core;
+using Factories;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
+using Services;
 
 /// <summary>
 ///     Provides extension methods for registering Sloop PostgreSQL cache components into a service collection.
@@ -19,13 +21,16 @@ public static class DependencyInjection
     /// <returns>The updated service collection.</returns>
     public static IServiceCollection AddCache(this IServiceCollection services, Action<SloopOptions> configure)
     {
-        services.Configure(configure);
-        services.AddSingleton<IConfigureOptions<SloopOptions>, SloopOptionsValidator>();
+        services
+            .AddOptions<SloopOptions>()
+            .Configure(configure)
+            .Validate(x => x.Validate());
 
         services.AddSingleton(TimeProvider.System);
+
+        services.AddHostedService<SloopMigrationService>();
         services.AddHostedService<SloopCleanupService>();
 
-        services.AddTransient<IDbCacheCommand<CreateTableArgs, bool>, CreateTableCommand>();
         services.AddTransient<IDbCacheCommand<GetItemArgs, byte[]?>, GetItemCommand>();
         services.AddTransient<IDbCacheCommand<PurgeExpiredItemsArgs, long>, PurgeExpiredItemsCommand>();
         services.AddTransient<IDbCacheCommand<RefreshItemArgs, bool>, RefreshItemCommand>();
@@ -33,7 +38,9 @@ public static class DependencyInjection
         services.AddTransient<IDbCacheCommand<SetItemArgs, bool>, SetItemCommand>();
         services.AddTransient<IDbCacheCommand<TryAcquireLockArgs, bool>, TryAcquireLockCommand>();
 
-        services.AddTransient<IDbCommandResolver, SloopCommandResolver>();
+        services.AddSingleton<IDbCacheContext, SloopCacheContext>();
+        services.AddSingleton<IDbCacheMigrator, SloopCacheMigrator>();
+        services.AddSingleton<IDbCommandFactory, SloopCommandFactory>();
         services.AddSingleton<IDbCacheOperations, SloopOperations>();
         services.AddSingleton<IDbConnectionFactory, SloopConnectionFactory>();
         services.AddSingleton<IDistributedCache, SloopCache>();
