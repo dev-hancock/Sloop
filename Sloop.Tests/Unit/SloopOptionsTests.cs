@@ -3,7 +3,7 @@
 using Core;
 using Microsoft.Extensions.Options;
 
-public class SloopOptionsValidatorTests
+public class SloopOptionsTests
 {
     [Fact]
     public void Configure_ShouldThrow_WhenTableNameIsNull()
