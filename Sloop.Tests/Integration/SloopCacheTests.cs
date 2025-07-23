@@ -77,7 +77,8 @@ public class SloopCacheTests : IAsyncLifetime
         return Encoding.UTF8.GetString(data);
     }
 
-    private (DateTimeOffset? Expiry, TimeSpan? Sliding, DateTimeOffset? Absolute) GetMetadata(NpgsqlConnection connection, string key)
+    private (DateTimeOffset? Expiry, TimeSpan? Sliding, DateTimeOffset? Absolute)? GetMetadata(NpgsqlConnection connection,
+        string key)
     {
         using var cmd = connection.CreateCommand();
 
@@ -90,9 +91,10 @@ public class SloopCacheTests : IAsyncLifetime
         cmd.Parameters.AddWithValue("key", key);
 
         using var reader = cmd.ExecuteReader();
+
         if (!reader.Read())
         {
-            return default;
+            return null;
         }
 
         return (
@@ -138,7 +140,7 @@ public class SloopCacheTests : IAsyncLifetime
                     SlidingExpiration = TimeSpan.FromMilliseconds(500)
                 }));
 
-        var before = GetMetadata(connection, key).Expiry;
+        var before = GetMetadata(connection, key)?.Expiry;
 
         await Task.Delay(100);
 
@@ -146,7 +148,7 @@ public class SloopCacheTests : IAsyncLifetime
 
         Assert.NotNull(result);
 
-        var after = GetMetadata(connection, key).Expiry;
+        var after = GetMetadata(connection, key)?.Expiry;
 
         Assert.True(after > before);
     }
@@ -265,9 +267,10 @@ public class SloopCacheTests : IAsyncLifetime
 
         var meta = GetMetadata(connection, key);
 
-        Assert.NotNull(meta.Expiry);
-        Assert.Null(meta.Sliding);
-        Assert.NotNull(meta.Absolute);
+        Assert.NotNull(meta);
+        Assert.NotNull(meta.Value.Expiry);
+        Assert.Null(meta.Value.Sliding);
+        Assert.NotNull(meta.Value.Absolute);
 
         await Task.Delay(2000);
 
@@ -293,9 +296,10 @@ public class SloopCacheTests : IAsyncLifetime
 
         var meta = GetMetadata(connection, key);
 
-        Assert.NotNull(meta.Expiry);
-        Assert.NotNull(meta.Sliding);
-        Assert.Null(meta.Absolute);
+        Assert.NotNull(meta);
+        Assert.NotNull(meta.Value.Expiry);
+        Assert.NotNull(meta.Value.Sliding);
+        Assert.Null(meta.Value.Absolute);
     }
 
     [Fact]
@@ -318,9 +322,44 @@ public class SloopCacheTests : IAsyncLifetime
 
         var meta = GetMetadata(connection, key);
 
-        Assert.Equal(absolute, meta.Expiry ?? DateTimeOffset.MinValue, DateTimeTolerance);
-        Assert.Equal(TimeSpan.FromSeconds(60), meta.Sliding);
-        Assert.Equal(absolute, meta.Absolute ?? DateTimeOffset.MinValue, DateTimeTolerance);
+        Assert.NotNull(meta);
+        Assert.Equal(absolute, meta.Value.Expiry ?? DateTimeOffset.MinValue, DateTimeTolerance);
+        Assert.Equal(TimeSpan.FromSeconds(60), meta.Value.Sliding);
+        Assert.Equal(absolute, meta.Value.Absolute ?? DateTimeOffset.MinValue, DateTimeTolerance);
+    }
+
+    [Fact]
+    public async Task SetAsync_ShouldStoreNullValue_WhenValueIsNull()
+    {
+        await using var connection = await _connection.Create();
+
+        var key = Guid.NewGuid().ToString();
+
+        await _operations.SetItem.ExecuteAsync(
+            connection,
+            new SetItemArgs(key, null!, new DistributedCacheEntryOptions())
+        );
+
+        var meta = GetMetadata(connection, key);
+
+        Assert.NotNull(meta);
+    }
+
+    [Fact]
+    public async Task GetAsync_ShouldReturnNull_WhenStoredValueIsNull()
+    {
+        await using var connection = await _connection.Create();
+
+        var key = Guid.NewGuid().ToString();
+
+        await _operations.SetItem.ExecuteAsync(
+            connection,
+            new SetItemArgs(key, null!, new DistributedCacheEntryOptions())
+        );
+
+        var result = await _operations.GetItem.ExecuteAsync(connection, new GetItemArgs(key));
+
+        Assert.Null(result);
     }
 
     [Fact]
@@ -337,9 +376,10 @@ public class SloopCacheTests : IAsyncLifetime
 
         var meta = GetMetadata(connection, key);
 
-        Assert.Null(meta.Expiry);
-        Assert.Null(meta.Sliding);
-        Assert.Null(meta.Absolute);
+        Assert.NotNull(meta);
+        Assert.Null(meta.Value.Expiry);
+        Assert.Null(meta.Value.Sliding);
+        Assert.Null(meta.Value.Absolute);
 
         var result = await _operations.PurgeExpiredItems.ExecuteAsync(connection, new PurgeExpiredItemsArgs());
 

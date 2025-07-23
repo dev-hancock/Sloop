@@ -64,7 +64,7 @@ public class GetItemCommand : IDbCacheCommand<GetItemArgs, byte[]?>
             return null;
         }
 
-        _logger.CacheHit(args.Key);
+        _logger.CacheHit(args.Key, value?.Length ?? 0);
 
         return value;
     }
