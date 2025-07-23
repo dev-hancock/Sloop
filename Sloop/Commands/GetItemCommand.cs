@@ -2,6 +2,8 @@ namespace Sloop.Commands;
 
 using Abstractions;
 using Core;
+using Logging;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Npgsql;
 
@@ -17,20 +19,26 @@ public record GetItemArgs(string Key);
 /// </summary>
 public class GetItemCommand : IDbCacheCommand<GetItemArgs, byte[]?>
 {
+    private readonly ILogger<GetItemCommand> _logger;
+
     private readonly SloopOptions _options;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="GetItemCommand" /> class.
     /// </summary>
     /// <param name="options">The configured Sloop options.</param>
-    public GetItemCommand(IOptions<SloopOptions> options)
+    /// <param name="logger">The logger <see cref="ILogger" /></param>
+    public GetItemCommand(IOptions<SloopOptions> options, ILogger<GetItemCommand> logger)
     {
+        _logger = logger;
         _options = options.Value;
     }
 
     /// <inheritdoc />
     public async Task<byte[]?> ExecuteAsync(NpgsqlConnection connection, GetItemArgs args, CancellationToken token = default)
     {
+        _logger.GetStart(args.Key);
+
         await using var cmd = connection.CreateCommand();
 
         cmd.CommandText =
@@ -45,8 +53,19 @@ public class GetItemCommand : IDbCacheCommand<GetItemArgs, byte[]?>
 
         cmd.Parameters.AddWithValue("key", args.Key);
 
+        _logger.ExecutingSql(cmd.CommandText);
+
         var result = await cmd.ExecuteScalarAsync(token);
 
-        return result == DBNull.Value || result is null ? null : (byte[])result;
+        if (result is not byte[] value)
+        {
+            _logger.CacheMiss(args.Key);
+
+            return null;
+        }
+
+        _logger.CacheHit(args.Key);
+
+        return value;
     }
 }

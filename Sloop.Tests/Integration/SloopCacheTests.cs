@@ -6,6 +6,8 @@ using Commands;
 using Extensions;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 using Testcontainers.PostgreSql;
 
@@ -36,6 +38,9 @@ public class SloopCacheTests : IAsyncLifetime
         await _db.StartAsync();
 
         var services = new ServiceCollection();
+
+        services.AddSingleton(NullLoggerFactory.Instance);
+        services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
 
         services.AddCache(opt =>
         {

@@ -3,7 +3,9 @@
 using Abstractions;
 using Commands;
 using Core;
+using Logging;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 /// <summary>
@@ -12,7 +14,11 @@ using Microsoft.Extensions.Options;
 /// </summary>
 internal class SloopCleanupService : BackgroundService
 {
+    private const int LockId = 42_000;
+
     private readonly IDbConnectionFactory _connection;
+
+    private readonly ILogger<SloopCleanupService> _logger;
 
     private readonly IDbCacheOperations _operations;
 
@@ -30,11 +36,14 @@ internal class SloopCleanupService : BackgroundService
     /// <param name="operations">
     ///     The cache operations used to purge expired items and acquire distributed locks.
     /// </param>
-    public SloopCleanupService(IOptions<SloopOptions> options, IDbConnectionFactory connection, IDbCacheOperations operations)
+    /// <param name="logger">The logger <see cref="ILogger" /></param>
+    public SloopCleanupService(IOptions<SloopOptions> options, IDbConnectionFactory connection, IDbCacheOperations operations,
+        ILogger<SloopCleanupService> logger)
     {
         _options = options.Value;
         _connection = connection;
         _operations = operations;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -42,14 +51,42 @@ internal class SloopCleanupService : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            await using var connection = await _connection.Create(stoppingToken);
-
-            if (await _operations.TryAcquireLock.ExecuteAsync(connection, new TryAcquireLockArgs(42_000), stoppingToken))
+            try
             {
-                await _operations.PurgeExpiredItems.ExecuteAsync(connection, new PurgeExpiredItemsArgs(), stoppingToken);
+                await using var connection = await _connection.Create(stoppingToken);
+
+                _logger.TryLockStart(LockId);
+
+                var result = await _operations.TryAcquireLock.ExecuteAsync(connection, new TryAcquireLockArgs(LockId), stoppingToken);
+
+                if (result)
+                {
+                    _logger.TryLockAcquired(LockId);
+
+                    await _operations.PurgeExpiredItems.ExecuteAsync(connection, new PurgeExpiredItemsArgs(), stoppingToken);
+                }
+                else
+                {
+                    _logger.TryLockDenied(LockId);
+                }
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                _logger.CleanupFailed(ex);
             }
 
-            await Task.Delay(_options.CleanupInterval, stoppingToken);
+            try
+            {
+                await Task.Delay(_options.CleanupInterval, stoppingToken);
+            }
+            catch (OperationCanceledException)
+            {
+                // Do nothing, the service is stopping
+            }
         }
     }
 }

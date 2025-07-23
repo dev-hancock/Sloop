@@ -2,6 +2,8 @@ namespace Sloop.Commands;
 
 using Abstractions;
 using Core;
+using Logging;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Npgsql;
 
@@ -16,20 +18,26 @@ public record RefreshItemArgs(string Key);
 /// </summary>
 public class RefreshItemCommand : IDbCacheCommand<RefreshItemArgs, bool>
 {
+    private readonly ILogger<RefreshItemCommand> _logger;
+
     private readonly SloopOptions _options;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="RefreshItemCommand" /> class.
     /// </summary>
     /// <param name="options">The configured Sloop options.</param>
-    public RefreshItemCommand(IOptions<SloopOptions> options)
+    /// <param name="logger">The logger <see cref="ILogger" /></param>
+    public RefreshItemCommand(IOptions<SloopOptions> options, ILogger<RefreshItemCommand> logger)
     {
+        _logger = logger;
         _options = options.Value;
     }
 
     /// <inheritdoc />
-    public async Task<bool> ExecuteAsync(NpgsqlConnection connection, RefreshItemArgs itemArgs, CancellationToken token = default)
+    public async Task<bool> ExecuteAsync(NpgsqlConnection connection, RefreshItemArgs args, CancellationToken token = default)
     {
+        _logger.RefreshStart(args.Key);
+
         await using var cmd = connection.CreateCommand();
 
         cmd.CommandText =
@@ -39,9 +47,20 @@ public class RefreshItemCommand : IDbCacheCommand<RefreshItemArgs, bool>
              WHERE key = @key AND sliding_interval IS NOT NULL;
              """;
 
-        cmd.Parameters.AddWithValue("key", itemArgs.Key);
+        cmd.Parameters.AddWithValue("key", args.Key);
+
+        _logger.ExecutingSql(cmd.CommandText);
 
         var count = await cmd.ExecuteNonQueryAsync(token);
+
+        if (count == 0)
+        {
+            _logger.RefreshNoop(args.Key);
+        }
+        else
+        {
+            _logger.RefreshUpdated(args.Key);
+        }
 
         return count > 0;
     }
