@@ -13,8 +13,8 @@ public static partial class LoggingExtensions
     [LoggerMessage(
         (int)SloopEventId.GetItemHit,
         LogLevel.Debug,
-        "Cache hit for key '{key}'.")]
-    public static partial void CacheHit(this ILogger logger, string key);
+        "Cache hit for key '{key}' ({length} bytes).")]
+    public static partial void CacheHit(this ILogger logger, string key, long length);
 
     [LoggerMessage(
         (int)SloopEventId.GetItemMiss,

@@ -44,7 +44,7 @@ public class SetItemCommand : IDbCacheCommand<SetItemArgs, bool>
     /// <inheritdoc />
     public async Task<bool> ExecuteAsync(NpgsqlConnection connection, SetItemArgs args, CancellationToken token = default)
     {
-        _logger.SetStart(args.Key, args.Value.Length);
+        _logger.SetStart(args.Key, args.Value?.Length ?? 0);
 
         var options = args.Options ?? new DistributedCacheEntryOptions();
 
@@ -70,10 +70,10 @@ public class SetItemCommand : IDbCacheCommand<SetItemArgs, bool>
              """;
 
         cmd.Parameters.AddWithValue("key", args.Key);
-        cmd.Parameters.AddWithValue("value", args.Value);
-        cmd.Parameters.AddWithValue("expires_at", expiration.HasValue ? expiration.Value.UtcDateTime : DBNull.Value);
-        cmd.Parameters.AddWithValue("sliding_interval", sliding.HasValue ? sliding.Value : DBNull.Value);
-        cmd.Parameters.AddWithValue("absolute_expiry", absolute.HasValue ? absolute.Value.UtcDateTime : DBNull.Value);
+        cmd.Parameters.AddWithValue("value", args.Value! ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("expires_at", expiration?.UtcDateTime! ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("sliding_interval", sliding! ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("absolute_expiry", absolute?.UtcDateTime! ?? (object)DBNull.Value);
 
         _logger.ExecutingSql(cmd.CommandText);
 

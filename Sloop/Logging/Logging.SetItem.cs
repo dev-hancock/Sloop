@@ -8,7 +8,7 @@ public static partial class LoggingExtensions
         (int)SloopEventId.SetStart,
         LogLevel.Debug,
         "Setting cache item '{key}' ({length} bytes).")]
-    public static partial void SetStart(this ILogger logger, string key, int length);
+    public static partial void SetStart(this ILogger logger, string key, long length);
 
     [LoggerMessage(
         (int)SloopEventId.SetStored,
