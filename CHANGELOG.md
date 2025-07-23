@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.0] - 2025-07-23
+
+### Added
+
+- Structured logging across the library via `Microsoft.Extensions.Logging` ([LoggerMessage] extensions).
+
+### Changed
+
+- Support for storing and retrieving `null` values as cache items.
+
+---
+
 ## [2.0.0] - 2025-07-21
 
 ### Added

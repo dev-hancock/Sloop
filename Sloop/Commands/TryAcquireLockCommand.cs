@@ -1,6 +1,8 @@
 namespace Sloop.Commands;
 
 using Abstractions;
+using Logging;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 
 /// <summary>
@@ -15,17 +17,43 @@ public record TryAcquireLockArgs(long Id);
 /// </summary>
 public class TryAcquireLockCommand : IDbCacheCommand<TryAcquireLockArgs, bool>
 {
+    private readonly ILogger<TryAcquireLockCommand> _logger;
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="TryAcquireLockCommand" /> class.
+    /// </summary>
+    /// <param name="logger">The logger <see cref="ILogger" /></param>
+    public TryAcquireLockCommand(ILogger<TryAcquireLockCommand> logger)
+    {
+        _logger = logger;
+    }
+
     /// <inheritdoc />
     public async Task<bool> ExecuteAsync(NpgsqlConnection connection, TryAcquireLockArgs args, CancellationToken token = default)
     {
+        _logger.TryLockStart(args.Id);
+
         await using var cmd = connection.CreateCommand();
 
         cmd.CommandText = "SELECT pg_try_advisory_lock(@id);";
 
         cmd.Parameters.AddWithValue("id", args.Id);
 
-        var acquired = await cmd.ExecuteScalarAsync(token);
+        _logger.ExecutingSql(cmd.CommandText);
 
-        return acquired is true;
+        var result = await cmd.ExecuteScalarAsync(token);
+
+        var acquired = result is true;
+
+        if (acquired)
+        {
+            _logger.TryLockAcquired(args.Id);
+        }
+        else
+        {
+            _logger.TryLockDenied(args.Id);
+        }
+
+        return acquired;
     }
 }

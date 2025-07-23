@@ -2,7 +2,9 @@ namespace Sloop.Commands;
 
 using Abstractions;
 using Core;
+using Logging;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Npgsql;
 
@@ -20,6 +22,8 @@ public record SetItemArgs(string Key, byte[] Value, DistributedCacheEntryOptions
 /// </summary>
 public class SetItemCommand : IDbCacheCommand<SetItemArgs, bool>
 {
+    private readonly ILogger<SetItemCommand> _logger;
+
     private readonly SloopOptions _options;
 
     private readonly TimeProvider _time;
@@ -29,15 +33,19 @@ public class SetItemCommand : IDbCacheCommand<SetItemArgs, bool>
     /// </summary>
     /// <param name="options">The configured Sloop options.</param>
     /// <param name="time">The system time provider used for expiration calculations.</param>
-    public SetItemCommand(IOptions<SloopOptions> options, TimeProvider time)
+    /// <param name="logger">The logger <see cref="ILogger" /></param>
+    public SetItemCommand(IOptions<SloopOptions> options, TimeProvider time, ILogger<SetItemCommand> logger)
     {
         _options = options.Value;
         _time = time;
+        _logger = logger;
     }
 
     /// <inheritdoc />
     public async Task<bool> ExecuteAsync(NpgsqlConnection connection, SetItemArgs args, CancellationToken token = default)
     {
+        _logger.SetStart(args.Key, args.Value.Length);
+
         var options = args.Options ?? new DistributedCacheEntryOptions();
 
         var now = _time.GetUtcNow();
@@ -67,9 +75,20 @@ public class SetItemCommand : IDbCacheCommand<SetItemArgs, bool>
         cmd.Parameters.AddWithValue("sliding_interval", sliding.HasValue ? sliding.Value : DBNull.Value);
         cmd.Parameters.AddWithValue("absolute_expiry", absolute.HasValue ? absolute.Value.UtcDateTime : DBNull.Value);
 
-        var result = await cmd.ExecuteNonQueryAsync(token);
+        _logger.ExecutingSql(cmd.CommandText);
 
-        return result == 1;
+        var count = await cmd.ExecuteNonQueryAsync(token);
+
+        if (count > 0)
+        {
+            _logger.SetStored(args.Key);
+        }
+        else
+        {
+            _logger.SetNoop(args.Key);
+        }
+
+        return count == 1;
     }
 
     private DateTimeOffset? GetAbsoluteExpiration(DateTimeOffset now, DistributedCacheEntryOptions options)

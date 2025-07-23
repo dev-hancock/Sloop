@@ -2,6 +2,8 @@ namespace Sloop.Commands;
 
 using Abstractions;
 using Core;
+using Logging;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Npgsql;
 
@@ -16,20 +18,26 @@ public record PurgeExpiredItemsArgs(long Limit = 1000);
 /// </summary>
 public class PurgeExpiredItemsCommand : IDbCacheCommand<PurgeExpiredItemsArgs, long>
 {
+    private readonly ILogger<PurgeExpiredItemsCommand> _logger;
+
     private readonly SloopOptions _options;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="PurgeExpiredItemsCommand" /> class.
     /// </summary>
     /// <param name="options">The configured Sloop options.</param>
-    public PurgeExpiredItemsCommand(IOptions<SloopOptions> options)
+    /// <param name="logger">The logger <see cref="ILogger" /></param>
+    public PurgeExpiredItemsCommand(IOptions<SloopOptions> options, ILogger<PurgeExpiredItemsCommand> logger)
     {
+        _logger = logger;
         _options = options.Value;
     }
 
     /// <inheritdoc />
     public async Task<long> ExecuteAsync(NpgsqlConnection connection, PurgeExpiredItemsArgs args, CancellationToken token = default)
     {
+        _logger.PurgeStart(args.Limit);
+
         var total = 0L;
 
         while (!token.IsCancellationRequested)
@@ -46,6 +54,8 @@ public class PurgeExpiredItemsCommand : IDbCacheCommand<PurgeExpiredItemsArgs, l
                  );
                  """;
 
+            _logger.ExecutingSql(cmd.CommandText);
+
             var count = await cmd.ExecuteNonQueryAsync(token);
 
             if (count == 0)
@@ -54,7 +64,11 @@ public class PurgeExpiredItemsCommand : IDbCacheCommand<PurgeExpiredItemsArgs, l
             }
 
             total += count;
+
+            _logger.PurgeBatch(count);
         }
+
+        _logger.PurgeFinished(total);
 
         return total;
     }
