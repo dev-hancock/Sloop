@@ -7,7 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [2.0.0] - 2025-07-23
+## [2.1.1] - 2025-07-23
+
+### Fixed
+
+- Fixed issue where null values were throwing exceptions with logging when stored in the cache.
+- Added tests to encapsulate null value handling in cache operations.
+
+---
+
+## [2.1.0] - 2025-07-23
 
 ### Added
 
