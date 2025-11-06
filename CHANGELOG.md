@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.1.2] - 2025-11-06
+
+### Added
+
+- Added an overload of the AddCache extension that accepts an Action<IServiceProvider, SloopOptions>,
+  allowing the options configuration delegate to resolve services from the container when configuring
+  SloopOptions (e.g. to obtain a connection factory or other dependencies).
+
+---
+
 ## [2.1.1] - 2025-07-23
 
 ### Fixed
