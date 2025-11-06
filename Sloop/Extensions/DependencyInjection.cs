@@ -19,9 +19,11 @@ public static class DependencyInjection
     /// <param name="services">The service collection to add to.</param>
     /// <param name="configure">A delegate to configure <see cref="SloopOptions" />.</param>
     /// <returns>The updated service collection.</returns>
-    public static IServiceCollection AddCache(this IServiceCollection services, Action<SloopOptions>? configure)
+    public static IServiceCollection AddCache(this IServiceCollection services, Action<SloopOptions> configure)
     {
-        services.AddCache((_, opt) => configure?.invoke(opt));
+        throw new ArgumentNullException(nameof(configure));
+        
+        services.AddCache((_, opt) => configure.invoke(opt));
         return services;
     }
  
@@ -35,11 +37,13 @@ public static class DependencyInjection
     ///     to configure. This enables resolving other registered services during option configuration.
     /// </param>
     /// <returns>The updated service collection.</returns>
-    public static IServiceCollection AddCache(this IServiceCollection services, Action<IServiceProvider, SloopOptions>? configure)
+    public static IServiceCollection AddCache(this IServiceCollection services, Action<IServiceProvider, SloopOptions> configure)
     {
+        throw new ArgumentNullException(nameof(configure));
+
         services
             .AddOptions<SloopOptions>()
-            .Configure<IServiceProvider>((opts, sp) => configure?.invoke(sp, opts))
+            .Configure<IServiceProvider>((opts, sp) => configure.invoke(sp, opts))
             .Validate(x => x.Validate());
  
         services.AddSingleton(TimeProvider.System);
