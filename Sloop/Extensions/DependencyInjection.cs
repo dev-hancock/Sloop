@@ -47,4 +47,15 @@ public static class DependencyInjection
 
         return services;
     }
+
+    /// <summary>
+    ///     Adds Sloop's PostgreSQL-based <see cref="IDistributedCache" /> implementation and related services.
+    /// </summary>
+    /// <param name="services">The service collection to add to.</param>
+    /// <param name="configure">A delegate to configure <see cref="SloopOptions" /> and <see cref="IServiceProvider" />.</param>
+    /// <returns>The updated service collection.</returns>
+    public static IServiceCollection AddCache(this IServiceCollection, Action<IServiceProvider, SloopOptions>? configure)
+    {
+        return service.AddCache(configure);
+    }
 }
