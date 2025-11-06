@@ -21,9 +21,9 @@ public static class DependencyInjection
     /// <returns>The updated service collection.</returns>
     public static IServiceCollection AddCache(this IServiceCollection services, Action<SloopOptions> configure)
     {
-        throw new ArgumentNullException(nameof(configure));
-        
-        services.AddCache((_, opt) => configure.invoke(opt));
+        ArgumentNullException.ThrowIfNull(configure);
+
+        services.AddCache((_, opt) => configure(opt));
         return services;
     }
  
@@ -39,11 +39,11 @@ public static class DependencyInjection
     /// <returns>The updated service collection.</returns>
     public static IServiceCollection AddCache(this IServiceCollection services, Action<IServiceProvider, SloopOptions> configure)
     {
-        throw new ArgumentNullException(nameof(configure));
+        ArgumentNullException.ThrowIfNull(configure);
 
         services
             .AddOptions<SloopOptions>()
-            .Configure<IServiceProvider>((opts, sp) => configure.invoke(sp, opts))
+            .Configure<IServiceProvider>((opts, sp) => configure(sp, opts))
             .Validate(x => x.Validate());
  
         services.AddSingleton(TimeProvider.System);
