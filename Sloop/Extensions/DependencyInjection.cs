@@ -21,7 +21,7 @@ public static class DependencyInjection
     /// <returns>The updated service collection.</returns>
     public static IServiceCollection AddCache(this IServiceCollection services, Action<SloopOptions> configure)
     {
-        services.AddCache((_, opt) => configure(opt));
+        services.AddCache((_, opt) => configure?.invoke(opt));
         return services;
     }
  
@@ -39,7 +39,7 @@ public static class DependencyInjection
     {
         services
             .AddOptions<SloopOptions>()
-            .Configure<IServiceProvider>((opts, sp) => configure!(sp, opts))
+            .Configure<IServiceProvider>((opts, sp) => configure?.invoke(sp, opts))
             .Validate(x => x.Validate());
  
         services.AddSingleton(TimeProvider.System);
